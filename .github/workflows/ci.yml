@@ -24,13 +24,9 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
+          # Sets UV_PYTHON so every `uv run` in `make all` uses this interpreter.
+          python-version: ${{ matrix.python-version }}
       - name: Sync environment
-        run: uv sync --extra dev --extra llm --python ${{ matrix.python-version }}
-      - name: Lint
-        run: uv run ruff check . && uv run ruff format --check .
-      - name: Type check
-        run: uv run mypy src
-      - name: Unit tests
-        run: uv run pytest -m "not integration" -q
-      - name: Security self-check
-        run: uv run python -m repro_agents._selfcheck
+        run: uv sync --extra dev --extra llm
+      - name: Build target (lint + typecheck + unit tests + self-check)
+        run: make all
