@@ -30,3 +30,20 @@ jobs:
         run: uv sync --extra dev --extra llm
       - name: Build target (lint + typecheck + unit tests + self-check)
         run: make all
+
+  integration:
+    name: integration (docker oracle + network)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          python-version: "3.12"
+      - name: Sync environment
+        run: uv sync --extra dev --extra llm
+      # ubuntu-latest ships a running Docker daemon, so the DockerSandbox oracle
+      # tests execute for real here (they skip locally when no daemon is present).
+      - name: Integration tests
+        run: uv run pytest -m integration -q
