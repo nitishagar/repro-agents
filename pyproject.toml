@@ -1,0 +1,86 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "repro-agents"
+version = "0.1.0"
+description = "Agents that rerun your science and show their receipts."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Nitish Agarwal" }]
+keywords = ["reproducibility", "agents", "science", "audit", "dependencies"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = [
+    "typer>=0.12",
+    "rich>=13",
+    "deptry>=0.23",
+    "packaging>=24",
+    "tomli>=2 ; python_version < '3.11'",
+]
+
+[project.urls]
+Homepage = "https://github.com/nitishagar/repro-agents"
+Documentation = "https://nitishagar.github.io/repro-agents/"
+Repository = "https://github.com/nitishagar/repro-agents"
+
+[project.optional-dependencies]
+# litellm is pinned forward of CVE-2026-40217/42203/42208/42271 (fixed in 1.83.10).
+llm = ["smolagents[litellm]>=1.20", "litellm>=1.83.10"]
+nb = ["nbformat>=5.10", "nbclient>=0.10", "nbdime>=4"]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=5",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pre-commit>=3.8",
+    "pip-audit>=2.7",
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.26",
+    "build>=1.2",
+]
+
+[project.scripts]
+repro-agents = "repro_agents.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/repro_agents"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "C4", "SIM", "RUF"]
+ignore = ["E501"]  # line length handled by the formatter
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B011"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_ignores = true
+warn_redundant_casts = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+module = ["deptry.*", "smolagents.*", "litellm.*", "nbformat.*", "nbclient.*", "nbdime.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers"
+markers = [
+    "integration: tests that need Docker and/or network access (deselect with -m 'not integration')",
+]

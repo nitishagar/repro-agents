@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Docs
+site/
+
+# repro-agents evidence bundles emitted during local runs
+report.json
+report.md
+*.repro-bundle/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
