@@ -18,6 +18,8 @@ import typer
 
 from repro_agents import __version__
 from repro_agents.agents.envforensics import run_environment_forensics
+from repro_agents.agents.models import Model
+from repro_agents.budget import Budget
 from repro_agents.report import Report, write_bundle
 from repro_agents.report.schema import STATUS_PASS
 from repro_agents.tools.sandbox import DockerSandbox, LocalSandbox, Sandbox
@@ -61,6 +63,18 @@ def _make_sandbox(kind: str) -> Sandbox:
     raise typer.BadParameter(f"unknown sandbox {kind!r}; choose 'docker' or 'local'")
 
 
+def _make_model(model_id: str | None) -> Model | None:
+    if not model_id:
+        return None
+    try:
+        from repro_agents.agents.adapters.smolagents_adapter import SmolagentsModel
+    except ImportError as exc:  # pragma: no cover - depends on the optional extra
+        raise typer.BadParameter(
+            "the agent loop needs the 'llm' extra: pip install 'repro-agents[llm]'"
+        ) from exc
+    return SmolagentsModel(model_id=model_id)
+
+
 def _print_summary(report: Report, json_path: Path, md_path: Path) -> None:
     typer.echo(f"repro-agents · {report.status.upper()}")
     if report.findings:
@@ -94,15 +108,31 @@ def audit(
         None, "--out", help="Directory to write the evidence bundle (default: current directory)."
     ),
     deptry: bool = typer.Option(True, "--deptry/--no-deptry", help="Run deptry as a cross-check."),
+    model: str | None = typer.Option(
+        None,
+        "--model",
+        help="LLM model id for the agent loop (e.g. anthropic/claude-sonnet-4-6). "
+        "Requires ANTHROPIC_API_KEY and the [llm] extra.",
+    ),
+    max_tokens: int | None = typer.Option(None, "--max-tokens", help="Agent-loop token cap."),
+    max_attempts: int | None = typer.Option(None, "--max-attempts", help="Agent-loop attempt cap."),
+    max_seconds: float | None = typer.Option(
+        None, "--max-seconds", help="Agent-loop wall-clock cap."
+    ),
 ) -> None:
     """Audit a project's environment (Pattern A) and emit an evidence bundle."""
-    if not no_llm:
+    if model and no_llm:
+        raise typer.BadParameter("--model and --no-llm are mutually exclusive")
+
+    model_obj = _make_model(model)
+    if model_obj is None and not no_llm:
         typer.echo(
-            "note: the live agent loop is not wired yet; running the deterministic "
-            "audit. Pass --no-llm to silence this note.",
+            "note: no --model given; running the deterministic audit. "
+            "Pass --no-llm to silence this note, or --model to use the agent loop.",
             err=True,
         )
 
+    budget = Budget(max_tokens=max_tokens, max_seconds=max_seconds, max_attempts=max_attempts)
     backend = _make_sandbox(sandbox)
     report = run_environment_forensics(
         path,
@@ -110,6 +140,8 @@ def audit(
         python_version=python_version,
         run_deptry_enabled=deptry,
         tool_versions=_collect_tool_versions(),
+        model=model_obj,
+        budget=budget,
     )
 
     json_path, md_path = write_bundle(report, out or Path.cwd())

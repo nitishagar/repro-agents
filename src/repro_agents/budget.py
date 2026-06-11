@@ -41,9 +41,9 @@ class Budget:
             raise BudgetExceeded(f"token budget exceeded: {self.tokens} > {self.max_tokens}")
 
     def new_attempt(self) -> int:
+        if self.max_attempts is not None and self.attempts >= self.max_attempts:
+            raise BudgetExceeded(f"attempt budget exceeded: {self.attempts} >= {self.max_attempts}")
         self.attempts += 1
-        if self.max_attempts is not None and self.attempts > self.max_attempts:
-            raise BudgetExceeded(f"attempt budget exceeded: {self.attempts} > {self.max_attempts}")
         return self.attempts
 
     def check_time(self) -> None:

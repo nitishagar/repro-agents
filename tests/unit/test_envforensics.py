@@ -75,6 +75,27 @@ def test_faulty_project_fails_when_oracle_cannot_prove_fix() -> None:
     assert report.status == "fail"
 
 
+def test_agentic_path_uses_the_loop_and_stays_oracle_graded() -> None:
+    from repro_agents.agents.models import FakeModel, Proposal
+    from repro_agents.budget import Budget
+
+    sandbox = FakeSandbox(solve_ok=True, smoke_ok=True)
+    client = PyPIClient(fetch=lambda name: True)
+    model = FakeModel([Proposal(["six"], rationale="add six", input_tokens=12, output_tokens=3)])
+    report = run_environment_forensics(
+        FIXTURES / "faulty_pkg",
+        sandbox=sandbox,
+        pypi_client=client,
+        run_deptry_enabled=False,
+        model=model,
+        budget=Budget(max_attempts=3),
+    )
+    assert report.status == "repairable"
+    assert report.oracle.proven is True
+    assert report.cost.input_tokens == 12  # cost came from the loop
+    assert "add six" in report.narrative  # narrative is the proposal rationale
+
+
 def test_unverifiable_dependency_is_blocked() -> None:
     sandbox = FakeSandbox()
     client = PyPIClient(fetch=lambda name: False)  # nothing verifies → slopsquat guard trips

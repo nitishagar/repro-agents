@@ -15,6 +15,9 @@ from pathlib import Path
 from packaging.utils import canonicalize_name
 
 from repro_agents import __version__
+from repro_agents.agents.loop import run_loop
+from repro_agents.agents.models import Model
+from repro_agents.budget import Budget
 from repro_agents.report import Report, build_report
 from repro_agents.report.schema import CostLine
 from repro_agents.tools.deps import DeptryResult, JsonPayload, diff, parse_declared, run_deptry
@@ -35,8 +38,15 @@ def run_environment_forensics(
     tool_versions: dict[str, str] | None = None,
     cost: CostLine | None = None,
     narrative: str = "",
+    model: Model | None = None,
+    budget: Budget | None = None,
 ) -> Report:
-    """Run the deterministic Pattern A audit and return its evidence bundle."""
+    """Run the Pattern A audit and return its evidence bundle.
+
+    With ``model=None`` the audit is fully deterministic. With a ``model`` it runs
+    the agent loop (proposals graded by the same oracle); the verdict still comes
+    only from oracle exit codes.
+    """
     project = Path(project_dir)
 
     inventory = collect_imports(project)
@@ -52,7 +62,23 @@ def run_environment_forensics(
     verification = verify_names(undeclared_imports, client=pypi_client)
     spec = synthesize_spec(verification)
     smoke_imports = [name for name in undeclared_imports if name not in verification.rejected]
-    proof = prove(spec, smoke_imports, sandbox=sandbox, python_version=python_version)
+
+    if model is None:
+        proof = prove(spec, smoke_imports, sandbox=sandbox, python_version=python_version)
+    else:
+        loop = run_loop(
+            undeclared_imports=smoke_imports,
+            model=model,
+            sandbox=sandbox,
+            budget=budget,
+            client=pypi_client,
+            python_version=python_version,
+            baseline=spec,
+        )
+        proof = loop.proof
+        cost = cost or loop.cost
+        joined = "\n\n".join(p.rationale for p in loop.proposals if p.rationale)
+        narrative = narrative or joined
 
     deptry_result: DeptryResult | None = None
     if run_deptry_enabled:
