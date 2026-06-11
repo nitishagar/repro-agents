@@ -1,0 +1,59 @@
+site_name: repro-agents
+site_description: Agents that rerun your science and show their receipts.
+site_url: https://nitishagar.github.io/repro-agents/
+repo_url: https://github.com/nitishagar/repro-agents
+repo_name: nitishagar/repro-agents
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - toc.follow
+  palette:
+    - scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            show_root_heading: true
+            show_source: false
+
+nav:
+  - Home: index.md
+  - Usage: usage.md
+  - Architecture: architecture.md
+  - Security: security.md
+  - API reference: api.md
+  - Design & plan: design.md
+
+# Plan/handoff docs live under docs/plans but are linked, not in the top nav.
+not_in_nav: |
+  plans/*
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
