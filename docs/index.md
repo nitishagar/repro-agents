@@ -18,7 +18,7 @@ if LLM text is ever used as a verdict.
 The whole core runs with **no LLM at all** (`--no-llm`) — both a safety story and
 an adoption wedge.
 
-## What v0.1 does — Pattern A (environment forensics)
+## What repro-agents does today — Pattern A (environment forensics)
 
 ```bash
 repro-agents audit path/to/project --no-llm
