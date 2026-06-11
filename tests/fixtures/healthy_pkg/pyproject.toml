@@ -1,0 +1,5 @@
+[project]
+name = "healthy-demo"
+version = "0.1.0"
+description = "A healthy demo project: every import is the standard library."
+dependencies = []

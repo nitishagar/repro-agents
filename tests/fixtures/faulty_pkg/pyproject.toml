@@ -1,0 +1,5 @@
+[project]
+name = "faulty-demo"
+version = "0.1.0"
+description = "A demo project with a seeded fault: an undeclared dependency on `six`."
+dependencies = []

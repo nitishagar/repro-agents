@@ -59,6 +59,8 @@ packages = ["src/repro_agents"]
 line-length = 100
 target-version = "py310"
 src = ["src", "tests"]
+# Seeded-fault fixtures intentionally contain "broken" code (undeclared imports etc.).
+extend-exclude = ["tests/fixtures"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "C4", "SIM", "RUF"]
@@ -66,6 +68,10 @@ ignore = ["E501"]  # line length handled by the formatter
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["B011"]
+
+[tool.ruff.lint.flake8-bugbear]
+# typer relies on function calls in argument defaults; this is the documented pattern.
+extend-immutable-calls = ["typer.Argument", "typer.Option"]
 
 [tool.mypy]
 python_version = "3.10"
