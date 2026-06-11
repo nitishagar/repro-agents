@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from typer.testing import CliRunner
@@ -12,6 +13,13 @@ from repro_agents.cli import app
 
 runner = CliRunner()
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
+
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _plain(text: str) -> str:
+    """Strip ANSI styling so assertions don't depend on rich's color/width output."""
+    return _ANSI.sub("", text)
 
 
 def test_version_command() -> None:
@@ -23,7 +31,9 @@ def test_version_command() -> None:
 def test_audit_help_lists_no_llm_flag() -> None:
     result = runner.invoke(app, ["audit", "--help"])
     assert result.exit_code == 0
-    assert "--no-llm" in result.stdout
+    # rich may inject ANSI styling mid-token when color is forced (e.g. in CI),
+    # so strip it before checking for the flag.
+    assert "--no-llm" in _plain(result.output)
 
 
 def test_audit_healthy_project_passes(tmp_path: Path) -> None:
